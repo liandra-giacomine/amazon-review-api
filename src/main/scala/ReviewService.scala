@@ -15,36 +15,33 @@ object ReviewService:
   // TODO: Handle fromNIOPath, it may throw an exception if the file doesn't exist
   // TODO: Need to handle json conversion and deserialisation errors
 
-  private def isWithinGivenTimeRange(
-      review: ReviewSummary,
-      fromTimeStamp: Long,
-      toTimeStamp: Long
-  ): Boolean =
-    (review.unixReviewTime >= fromTimeStamp) && (review.unixReviewTime <= toTimeStamp)
-
   private def collectReviews(
       fromTimeStamp: Long,
       toTimeStamp: Long
-  ): Pipe[IO, Byte, ReviewSummary] = { src =>
-    src
-      .through(text.utf8.decode)
-      .through(text.lines)
-      .map(line => parse(line))
-      .map {
-        case Right(json) =>
-          json
-            .as[ReviewSummary]
-            .toOption // assumption - ignore reviews that are not in the expected JSON format
-        case Left(_) => None
-      }
-      .filter(reviewOption =>
-        reviewOption.isDefined && isWithinGivenTimeRange(
-          reviewOption.get,
-          fromTimeStamp,
-          toTimeStamp
+  ): Pipe[IO, Byte, ReviewSummary] = {
+    def isWithinGivenTimeRange(
+        review: ReviewSummary
+    ): Boolean =
+      (review.unixReviewTime >= fromTimeStamp) && (review.unixReviewTime <= toTimeStamp)
+
+    src =>
+      src
+        .through(text.utf8.decode)
+        .through(text.lines)
+        .map(line => parse(line))
+        .map {
+          case Right(json) =>
+            json
+              .as[ReviewSummary]
+              .toOption // assumption - ignore reviews that are not in the expected JSON format
+          case Left(_) => None
+        }
+        .filter(reviewOption =>
+          reviewOption.isDefined && isWithinGivenTimeRange(
+            reviewOption.get
+          )
         )
-      )
-      .collect { case Some(review) => review }
+        .collect { case Some(review) => review }
   }
 
   def getBestReviews(
@@ -54,27 +51,31 @@ object ReviewService:
       minReviews: Int,
       returnLimit: Int
   ): IO[List[ReviewRating]] = {
+    def sortReviewRatingsAndTakeLimit(reviewRatings: List[ReviewRating]) =
+      IO(
+        reviewRatings
+          .sortBy(_.averageRating)(Ordering.BigDecimal.reverse)
+          .take(returnLimit)
+      )
+
     val fs2Path = Path.fromNioPath(
       java.nio.file.Paths.get(readFrom)
     )
-    val source: Stream[IO, Byte] = Files[IO].readAll(fs2Path)
-    source
+
+    Files[IO]
+      .readAll(fs2Path)
       .through(collectReviews(fromTimeStamp, toTimeStamp))
       .compile
       .toList
       .flatMap { reviews =>
-        convertToOrderedReviewRatingList(reviews, minReviews)
+        convertToReviewRatingsAndFilter(reviews, minReviews)
       }
       .flatMap { reviewRatings =>
-        IO(
-          reviewRatings
-            .sortBy(_.averageRating)(Ordering.BigDecimal.reverse)
-            .take(returnLimit)
-        )
+        sortReviewRatingsAndTakeLimit(reviewRatings)
       }
   }
 
-  private def convertToOrderedReviewRatingList(
+  private def convertToReviewRatingsAndFilter(
       reviews: List[ReviewSummary],
       minReviews: Int
   ) = {
@@ -107,5 +108,3 @@ object ReviewService:
       }
     }
   }
-
-//    .compile.toList

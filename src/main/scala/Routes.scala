@@ -28,6 +28,7 @@ import scala.concurrent.ExecutionContext
 object Routes:
 
 // TODO: Throw a bad request if toTimeStamp is more than fromTimeStamp?
+//TODO: Handle errors coming from the service, maybe return EitherT[IO, Throwable, List[ReviewRating]]
   def reviewRoutes[F[_]: Sync]: HttpRoutes[F] =
     val dsl = new Http4sDsl[F] {}
     import dsl._
