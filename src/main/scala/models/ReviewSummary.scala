@@ -5,11 +5,10 @@ import io.circe.generic.semiauto.*
 
 import java.time.Instant
 import java.util.Date
-
-final case class Review(
+final case class ReviewSummary(
     asin: String,
     helpful: (Int, Int),
-    overall: Double,
+    overall: BigDecimal,
     reviewText: String,
     reviewerID: String,
     reviewerName: String,
@@ -17,6 +16,6 @@ final case class Review(
     unixReviewTime: Long
 )
 
-object Review:
-  implicit val decoder: Decoder[Review] = deriveDecoder[Review]
-  implicit val encoder: Encoder[Review] = deriveEncoder[Review]
+object ReviewSummary:
+  implicit val decoder: Decoder[ReviewSummary] = deriveDecoder[ReviewSummary]
+  implicit val encoder: Encoder[ReviewSummary] = deriveEncoder[ReviewSummary]

@@ -5,16 +5,18 @@ import java.io.{File, FileInputStream}
 import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
 import cats.effect.{IO, Resource, Sync}
-import cats.implicits.*
 import io.circe.parser.*
-import models.Review
+import models.{ReviewRating, ReviewSummary}
+
+import scala.util.Sorting
+
 object ReviewService:
 
   // TODO: Handle fromNIOPath, it may throw an exception if the file doesn't exist
   // TODO: Need to handle json conversion and deserialisation errors
 
   private def isWithinGivenTimeRange(
-      review: Review,
+      review: ReviewSummary,
       fromTimeStamp: Long,
       toTimeStamp: Long
   ): Boolean =
@@ -23,14 +25,16 @@ object ReviewService:
   private def collectReviews(
       fromTimeStamp: Long,
       toTimeStamp: Long
-  ): Pipe[IO, Byte, Review] = { src =>
+  ): Pipe[IO, Byte, ReviewSummary] = { src =>
     src
       .through(text.utf8.decode)
       .through(text.lines)
       .map(line => parse(line))
       .map {
         case Right(json) =>
-          json.as[Review].toOption // assumption - ignore reviews that are not in the expected JSON format
+          json
+            .as[ReviewSummary]
+            .toOption // assumption - ignore reviews that are not in the expected JSON format
         case Left(_) => None
       }
       .filter(reviewOption =>
@@ -41,14 +45,15 @@ object ReviewService:
         )
       )
       .collect { case Some(review) => review }
-  // .take(2)
   }
 
   def getBestReviews(
       readFrom: String,
       fromTimeStamp: Long,
-      toTimeStamp: Long
-  ): IO[List[Review]] = {
+      toTimeStamp: Long,
+      minReviews: Int,
+      returnLimit: Int
+  ): IO[List[ReviewRating]] = {
     val fs2Path = Path.fromNioPath(
       java.nio.file.Paths.get(readFrom)
     )
@@ -57,5 +62,51 @@ object ReviewService:
       .through(collectReviews(fromTimeStamp, toTimeStamp))
       .compile
       .toList
+      .flatMap { reviews =>
+        convertToOrderedReviewRatingList(reviews, minReviews)
+      }
+      .flatMap { reviewRatings =>
+        IO(
+          reviewRatings
+            .sortBy(_.averageRating)(Ordering.BigDecimal.reverse)
+            .take(returnLimit)
+        )
+      }
   }
+
+  private def convertToOrderedReviewRatingList(
+      reviews: List[ReviewSummary],
+      minReviews: Int
+  ) = {
+
+    IO {
+      reviews.groupBy(_.asin).foldLeft(List.empty[ReviewRating]) {
+        (bestReviewList, asinAndReviewList) =>
+          bestReviewList ++ addIfHasEnoughReviews(
+            asinAndReviewList._1,
+            asinAndReviewList._2,
+            minReviews
+          )
+      }
+    }
+  }
+
+  private def addIfHasEnoughReviews(
+      asin: String,
+      reviewList: List[ReviewSummary],
+      minReviews: Int
+  ) = {
+    if (reviewList.length < minReviews)
+      List.empty[ReviewRating]
+    else
+      List(
+        ReviewRating(
+          asin,
+          reviewList
+            .map(_.overall)
+            .sum / reviewList.length
+        )
+      )
+  }
+
 //    .compile.toList

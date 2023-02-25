@@ -1,7 +1,7 @@
 package amazonreviewapi
 
 import cats.effect.IO
-import models.Review
+import models.ReviewSummary
 import org.http4s.*
 import org.http4s.implicits.*
 import munit.CatsEffectSuite

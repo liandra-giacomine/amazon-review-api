@@ -12,14 +12,13 @@ import org.http4s.server.*
 import org.http4s.dsl.io.Ok
 import cats.effect.*
 import cats.syntax.all.*
-import models.responses.BestReview
 import org.http4s.*
 import org.http4s.dsl.io.*
 import org.http4s.implicits.*
 import io.circe.syntax.*
 import org.http4s.circe.*
 import io.circe.parser.*
-import models.{Review}
+import models.{ReviewSummary, ReviewRating}
 import concurrent.duration.DurationInt
 
 import java.nio.file.Paths
@@ -37,9 +36,14 @@ object Routes:
       (for {
         reviews <- ReviewService
           .getBestReviews(
-            "/Users/taybeers/Documents/development/reviews.json",
-            1270635782,
-            1294536762
+            Paths
+              .get("")
+              .toAbsolutePath
+              .toString + "/src/test/scala/resources/reviews.json",
+            1262304000,
+            1609372800,
+            2,
+            2
           )
       } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
     }
