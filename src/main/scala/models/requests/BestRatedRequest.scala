@@ -33,7 +33,8 @@ object BestRatedRequest:
 
   private val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
   private def convertToUnixTimeStamp(dateString: String) =
-    val unixTimeInMilliseconds = dateFormat.parse(dateString).getTime
+    val unixTimeInMilliseconds =
+      dateFormat.parse(dateString).getTime // TODO: Convert to seconds
     UnixTimeStamp(unixTimeInMilliseconds)
 
 //{
