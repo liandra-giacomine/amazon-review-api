@@ -4,12 +4,17 @@ import models.ReviewSummary
 import models.ReviewRating
 import munit.CatsEffectSuite
 
+import java.nio.file.Paths
+
 class ReviewServiceSpec extends CatsEffectSuite:
 
   test("GET /amazon/best-review returns status code 200") {
     assertIO(
       ReviewService.getBestReviews(
-        "/Users/taybeers/Documents/development/reviews.json",
+        Paths
+          .get("")
+          .toAbsolutePath
+          .toString + "/src/test/scala/resources/reviews.json",
         1262304000,
         1609372800,
         2,

@@ -37,10 +37,7 @@ object Routes:
       (for {
         reviews <- ReviewService
           .getBestReviews(
-            Paths
-              .get("")
-              .toAbsolutePath
-              .toString + "/src/test/scala/resources/reviews.json",
+            "/Users/taybeers/Documents/development/amazon-reviews.json",
             1262304000,
             1609372800,
             2,
