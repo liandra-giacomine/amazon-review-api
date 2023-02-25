@@ -14,7 +14,7 @@ final case class Review(
     reviewerID: String,
     reviewerName: String,
     summary: String,
-    unixReviewTime: UnixTimeStamp
+    unixReviewTime: Long
 )
 
 object Review:
