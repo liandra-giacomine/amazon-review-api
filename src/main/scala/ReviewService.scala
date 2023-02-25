@@ -78,6 +78,23 @@ object ReviewService:
       reviews: List[ReviewSummary],
       minReviews: Int
   ) = {
+    def addIfHasEnoughReviews(
+        asin: String,
+        reviewList: List[ReviewSummary],
+        minReviews: Int
+    ) = {
+      if (reviewList.length < minReviews)
+        List.empty[ReviewRating]
+      else
+        List(
+          ReviewRating(
+            asin,
+            reviewList
+              .map(_.overall)
+              .sum / reviewList.length
+          )
+        )
+    }
 
     IO {
       reviews.groupBy(_.asin).foldLeft(List.empty[ReviewRating]) {
@@ -89,24 +106,6 @@ object ReviewService:
           )
       }
     }
-  }
-
-  private def addIfHasEnoughReviews(
-      asin: String,
-      reviewList: List[ReviewSummary],
-      minReviews: Int
-  ) = {
-    if (reviewList.length < minReviews)
-      List.empty[ReviewRating]
-    else
-      List(
-        ReviewRating(
-          asin,
-          reviewList
-            .map(_.overall)
-            .sum / reviewList.length
-        )
-      )
   }
 
 //    .compile.toList
