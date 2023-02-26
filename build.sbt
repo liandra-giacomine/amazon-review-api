@@ -4,7 +4,10 @@ val LogbackVersion         = "1.2.6"
 val MunitCatsEffectVersion = "1.0.6"
 val CirceVersion           = "0.14.3"
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 lazy val root = (project in file("."))
+  .settings(inThisBuild(buildSettings))
   .settings(
     organization := "com.example",
     name         := "quickstart",
@@ -21,6 +24,7 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
       "ch.qos.logback" % "logback-classic"     % LogbackVersion
     ),
-    testFrameworks += new TestFramework("munit.Framework"),
-    Global / onChangedBuildSource := ReloadOnSourceChanges
+    testFrameworks += new TestFramework("munit.Framework")
   )
+
+lazy val buildSettings = Def.settings(scalafmtOnCompile := true)
