@@ -12,12 +12,6 @@ import scala.util.Sorting
 
 object ReviewService:
 
-  // TODO: Handle fromNIOPath, it may throw an exception if the file doesn't exist
-  // TODO: Need to handle json conversion and deserialisation errors
-
-  // TODO: https://stackoverflow.com/questions/37335/how-to-deal-with-java-lang-outofmemoryerror-java-heap-space-error
-  // See if possible to replace with recursing function to make it faster and use less memory space
-
   private def collectReviews(
       fromTimeStamp: Long,
       toTimeStamp: Long
