@@ -8,12 +8,12 @@ import munit.CatsEffectSuite
 
 class RoutesSpec extends CatsEffectSuite:
 
-  test("GET /amazon/best-review returns status code 200") {
+  test("POST /amazon/best-review returns status code 200") {
     assertIO(getBestReview.map(_.status), Status.Ok)
   }
 
   test(
-    "GET /amazon/best-review returns array of asin and average_rating objects"
+    "POST /amazon/best-review returns array of asin and average_rating objects"
   ) {
     assertIO(
       getBestReview.flatMap(_.as[String]),
@@ -22,9 +22,7 @@ class RoutesSpec extends CatsEffectSuite:
   }
 
   private[this] val getBestReview: IO[Response[IO]] =
-    Routes
-      .reviewRoutes[IO]
-      .orNotFound
+    Routes.reviewRoutes.orNotFound
       .run(
-        Request(method = Method.GET, uri = uri"/amazon/best-review")
+        Request(method = Method.POST, uri = uri"/amazon/best-review")
       )

@@ -1,45 +1,46 @@
-package models.requests
+package models
 
-import io.circe.{Decoder, HCursor}
-//import models.UnixTimeStamp
+import io.circe.{Decoder, Encoder, HCursor, Json}
 
-import java.time.Instant
+import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import io.circe.generic.semiauto.*
 
-//is it a wise decision to be converting it to unixReviewTime
-case class BestRatedRequest(
-    startUnixTimeStamp: Long,
-    endUnixTimeStamp: Long,
+case class BestReviewRequest(
+    startDate: String,
+    endDate: String,
     limit: Int,
     minReviews: Int
 )
-//TODO: Convert to UnixTimeStamp case class
-object BestRatedRequest:
-  implicit val decodeFoo: Decoder[BestRatedRequest] =
-    new Decoder[BestRatedRequest] {
-      final def apply(c: HCursor): Decoder.Result[BestRatedRequest] =
+
+object BestReviewRequest:
+  private val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
+
+  private def convertToUnixTimeStamp(dateString: String): Long =
+    dateFormat
+      .parse(dateString)
+      .getTime / 1000 // Convert from milliseconds to seconds as per review's unix timestamp format
+
+  implicit val decoder: Decoder[BestReviewRequest] =
+    new Decoder[BestReviewRequest] {
+      final def apply(c: HCursor): Decoder.Result[BestReviewRequest] =
         for {
-          start      <- c.downField("start").as[Long]
-          end        <- c.downField("end").as[Long]
+          startDate  <- c.downField("start").as[String]
+          endDate    <- c.downField("end").as[String]
           limit      <- c.downField("limit").as[Int]
           minReviews <- c.downField("min_number_reviews").as[Int]
-//          unixStartDate = convertToUnixTimeStamp(startStr)
-//          unixEndDate   = convertToUnixTimeStamp(endStr)
         } yield {
-          new BestRatedRequest(start, end, limit, minReviews)
+          BestReviewRequest(startDate, endDate, limit, minReviews)
         }
     }
 
-//  private val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
-//  private def convertToUnixTimeStamp(dateString: String) =
-//    val unixTimeInMilliseconds =
-//      dateFormat.parse(dateString).getTime // TODO: Convert to seconds
-//    UnixTimeStamp(unixTimeInMilliseconds)
-
-//{
-//  "start": "01.01.2010",
-//  "end": "31.12.2020",
-//  "limit": 2,
-//  "min_number_reviews": 2
-//}
+  implicit val encode: Encoder[BestReviewRequest] =
+    new Encoder[BestReviewRequest] {
+      final def apply(b: BestReviewRequest): Json = Json.obj(
+        ("start", Json.fromString(b.startDate)),
+        ("end", Json.fromString(b.endDate)),
+        ("limit", Json.fromInt(b.limit)),
+        ("minReviews", Json.fromInt(b.minReviews))
+      )
+    }

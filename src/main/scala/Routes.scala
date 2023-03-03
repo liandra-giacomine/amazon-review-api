@@ -1,5 +1,6 @@
 package amazonreviewapi
 
+import cats.data.EitherT
 import cats.effect.{IO, Resource, Sync}
 import cats.implicits.*
 import fs2.{Pipe, Pure, Stream, text}
@@ -18,9 +19,9 @@ import org.http4s.implicits.*
 import io.circe.syntax.*
 import org.http4s.circe.*
 import io.circe.parser.*
-import models.{ReviewSummary, ReviewRating}
-import concurrent.duration.DurationInt
+import models.{BestReviewRequest, ReviewRating, ReviewSummary, ValidationError}
 
+import concurrent.duration.DurationInt
 import java.nio.file.Paths
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
@@ -29,19 +30,36 @@ object Routes:
 
 // TODO: Throw a bad request if toTimeStamp is more than fromTimeStamp?
 //TODO: Handle errors coming from the service, maybe return EitherT[IO, Throwable, List[ReviewRating]]
-  def reviewRoutes[F[_]: Sync]: HttpRoutes[F] =
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    HttpRoutes.of[F] { case GET -> Root / "amazon" / "best-review" =>
-      val runtime = cats.effect.unsafe.IORuntime.global
-      (for {
-        reviews <- ReviewService
-          .getBestReviews(
-            "/Users/taybeers/Documents/development/amazon-reviews.json",
-            1262304000,
-            1609372800,
-            2,
-            2
-          )
-      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
-    }
+  implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
+    jsonOf[IO, BestReviewRequest]
+
+  def parsePayload(req: Request[IO]) = {
+    for {
+      res <- EitherT(req.as[BestReviewRequest].attempt).leftMap(thr =>
+        ValidationError(thr.getMessage)
+      )
+    } yield res
+  }
+
+  val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ POST -> Root / "amazon" / "best-review" =>
+      import org.http4s.dsl.io.*
+      implicit val runtime = cats.effect.unsafe.IORuntime.global
+
+      req
+        .as[BestReviewRequest]
+        .attempt
+        .map {
+          case Left(thr) => BadRequest(thr.getMessage)
+          case Right(bestReviewReq) =>
+            PayloadValidator
+              .validateBestReviewRequest(bestReviewReq)
+              .value
+              .unsafeRunSync() match {
+              case Left(validationError) => BadRequest(validationError.message)
+              case Right(_)              => Ok("h")
+            }
+        }
+        .unsafeRunSync()
+
+  }
