@@ -13,13 +13,19 @@ import org.http4s.server.*
 import org.http4s.dsl.io.Ok
 import cats.effect.*
 import cats.syntax.all.*
+import connectors.PersistenceConnector
 import org.http4s.*
 import org.http4s.dsl.io.*
 import org.http4s.implicits.*
 import io.circe.syntax.*
 import org.http4s.circe.*
 import io.circe.parser.*
-import models.{BestReviewRequest, ReviewRating, ReviewSummary, ValidationError}
+import models.errors.ValidationError
+import models.responses.ReviewRating
+import models.requests.BestReviewRequest
+import org.http4s.client.{Client, JavaNetClientBuilder}
+import org.http4s.ember.client.EmberClientBuilder
+import utils.PayloadValidator
 
 import concurrent.duration.DurationInt
 import java.nio.file.Paths
@@ -32,14 +38,6 @@ object Routes:
 //TODO: Handle errors coming from the service, maybe return EitherT[IO, Throwable, List[ReviewRating]]
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
-
-  def parsePayload(req: Request[IO]) = {
-    for {
-      res <- EitherT(req.as[BestReviewRequest].attempt).leftMap(thr =>
-        ValidationError(thr.getMessage)
-      )
-    } yield res
-  }
 
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "amazon" / "best-review" =>
@@ -57,7 +55,11 @@ object Routes:
               .value
               .unsafeRunSync() match {
               case Left(validationError) => BadRequest(validationError.message)
-              case Right(_)              => Ok("h")
+              case Right(_) =>
+                PersistenceConnector
+                  .findBestReviews(bestReviewReq)
+                  .map(r => Ok(r.asJson))
+                  .unsafeRunSync()
             }
         }
         .unsafeRunSync()

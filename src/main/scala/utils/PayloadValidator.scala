@@ -1,20 +1,17 @@
-package amazonreviewapi
+package utils
 
-import PayloadValidator.{dateFormat, validateDate}
 import cats.data.EitherT
 import cats.effect.IO
-import models.{BestReviewRequest, ValidationError}
+import models.errors.ValidationError
+import models.requests.BestReviewRequest
 import org.http4s.Request
+import utils.PayloadValidator.{dateFormat, validateDate}
 
 import scala.util.Try
 
 object PayloadValidator:
 
-  private val dateFormat = IO {
-    val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
-    dateFormat.setLenient(false)
-    dateFormat
-  }
+  private val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
 
   def validateBestReviewRequest(
       r: BestReviewRequest
@@ -41,7 +38,10 @@ object PayloadValidator:
 
   private def validateDate(date: String) =
     EitherT {
-      dateFormat.map(d => Right(d.parse(date))).handleError { thr =>
+      IO {
+        dateFormat.setLenient(false)
+        Right(dateFormat.parse(date))
+      }.handleError { _ =>
         Left(ValidationError(s"Invalid date: $date"))
       }
     }

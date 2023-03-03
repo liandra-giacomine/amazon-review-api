@@ -1,11 +1,11 @@
-package models
+package models.requests
 
+import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder, HCursor, Json}
 
-import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 import java.util.Date
-import io.circe.generic.semiauto.*
 
 case class BestReviewRequest(
     startDate: String,
@@ -15,12 +15,6 @@ case class BestReviewRequest(
 )
 
 object BestReviewRequest:
-  private val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
-
-  private def convertToUnixTimeStamp(dateString: String): Long =
-    dateFormat
-      .parse(dateString)
-      .getTime / 1000 // Convert from milliseconds to seconds as per review's unix timestamp format
 
   implicit val decoder: Decoder[BestReviewRequest] =
     new Decoder[BestReviewRequest] {

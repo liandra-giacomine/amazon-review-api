@@ -1,4 +1,4 @@
-package models
+package models.responses
 
 import io.circe.{Encoder, Json}
 
