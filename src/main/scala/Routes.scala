@@ -39,12 +39,8 @@ object Routes:
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
 
-//  def deriveStatus(bestReviewReq: BestReviewRequest): org.http4s.Status = {
-//    PersistenceConnector
-//      .findBestReviews(
-//        bestReviewReq
-//      )
-//  }
+  implicit val encoder: EntityDecoder[IO, Seq[ReviewRating]] =
+    jsonOf[IO, Seq[ReviewRating]]
 
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "amazon" / "best-review" =>
@@ -64,9 +60,7 @@ object Routes:
               case Left(validationError) => BadRequest(validationError.message)
               case Right(_) =>
                 PersistenceConnector.findBestReviews(bestReviewReq) match {
-                  case Left(e) =>
-                    // TODO: Log message
-                    InternalServerError()
+                  case Left(_)  => InternalServerError()
                   case Right(r) => Ok(r.asJson)
                 }
             }
