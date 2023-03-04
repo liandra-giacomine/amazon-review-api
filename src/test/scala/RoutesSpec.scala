@@ -34,8 +34,16 @@ class RoutesSpec extends CatsEffectSuite:
   val bestReviewRequest = BestReviewRequest("01.01.2000", "01.01.2010", 1, 1)
   val reviews           = Seq(ReviewRating("B000JQ0JNS", 4.5))
 
-  val json =
-    """{"start": "01.01.2010", "end": "01.01.2020", "limit": 1, "min_number_reviews": 1}"""
+  val json = Json
+    .fromFields(
+      List(
+        ("start", Json.fromString("01.01.2010")),
+        ("end", Json.fromString("01.01.2020")),
+        ("limit", Json.fromInt(1)),
+        ("min_number_reviews", Json.fromInt(1))
+      )
+    )
+    .toString
 
   private[this] val getBestReview: IO[Response[IO]] =
     routes.reviewRoutes.orNotFound
@@ -58,12 +66,13 @@ class RoutesSpec extends CatsEffectSuite:
   test(
     "POST /amazon/best-review returns array of asin and average_rating objects"
   ) {
+
     when(mockPersistenceConnector.findBestReviews(any())(any()))
       .thenReturn(Right(reviews))
 
     assertIO(
-      getBestReview.flatMap(r => r.as[String]),
-      "[{\"asin\":\"B000JQ0JNS\",\"average_rating\":4.5}]"
+      getBestReview.flatMap(r => r.as[Seq[ReviewRating]]),
+      Seq(ReviewRating("B000JQ0JNS", 4.5))
     )
   }
 
