@@ -32,7 +32,7 @@ import java.nio.file.Paths
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
-object Routes:
+class Routes(persistenceConnector: PersistenceConnector):
 
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
@@ -57,7 +57,7 @@ object Routes:
               .unsafeRunSync() match {
               case Left(validationError) => BadRequest(validationError.message)
               case Right(_) =>
-                PersistenceConnector.findBestReviews(bestReviewReq) match {
+                persistenceConnector.findBestReviews(bestReviewReq) match {
                   case Left(_)  => InternalServerError()
                   case Right(r) => Ok(r.asJson)
                 }

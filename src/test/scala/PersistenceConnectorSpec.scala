@@ -1,71 +1,48 @@
-import models.errors.ValidationError
+package amazonreviewapi
+
+import cats.effect.unsafe.IORuntime
+import cats.effect.{IO, Resource}
+import connectors.PersistenceConnector
+import models.errors.{PersistenceError, ValidationError}
 import models.requests.BestReviewRequest
+import models.responses.ReviewRating
 import munit.CatsEffectSuite
+import org.http4s.client.Client
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
+import org.mockito.Mockito.when
+import org.scalatest.matchers.must.Matchers.mustBe
+import org.scalatestplus.mockito.MockitoSugar.mock
 import utils.PayloadValidator
 
 class PersistenceConnectorSpec extends CatsEffectSuite:
 
-  test("Returns a ValidationError when given an invalid start or end date") {
-    val invalidDate = "01.01.00"
-    assertIO(
-      {
-        val req = BestReviewRequest(invalidDate, "01.01.2000", 1, 1)
-        PayloadValidator.validateBestReviewRequest(req).value
-      },
-      Left(ValidationError(s"Invalid date: $invalidDate"))
-    )
+  val mockClient           = mock[Resource[IO, Client[IO]]]
+  val persistenceConnector = PersistenceConnector(mockClient)
+  val bestReviewRequest    = BestReviewRequest("01.01.2000", "01.01.2010", 1, 1)
+  implicit val runtime: IORuntime = cats.effect.unsafe.IORuntime.global
 
-    assertIO(
-      {
-        val req = BestReviewRequest("01.01.2000", invalidDate, 1, 1)
-        PayloadValidator.validateBestReviewRequest(req).value
-      },
-      Left(ValidationError(s"Invalid date: $invalidDate"))
-    )
-  }
+  test(
+    "Returns a sequence of Review results when the client parses the result as such"
+  ) {
+    val clientResponse = Seq(ReviewRating("asin", 1))
 
-  test("Returns a ValidationError when the end date is prior the start date") {
-    assertIO(
-      {
-        val req = BestReviewRequest("01.01.2010", "01.01.2000", 1, 1)
-        PayloadValidator.validateBestReviewRequest(req).value
-      },
-      Left(ValidationError("End date should be before start date"))
+    when(mockClient.use(any())(any())).thenReturn(IO(clientResponse))
+
+    persistenceConnector.findBestReviews(bestReviewRequest) mustBe Right(
+      clientResponse
     )
   }
 
   test(
-    "Returns a ValidationError when the limit or min_number_reviews is less than 0"
+    "Returns a PersistenceError when the client throws an exception"
   ) {
-    assertIO(
-      {
-        val req = BestReviewRequest("01.01.2010", "01.01.2020", -1, 1)
-        PayloadValidator.validateBestReviewRequest(req).value
-      },
-      Left(
-        ValidationError(s"Expected positive numerical value in limit. Found -1")
-      )
-    )
+    val errorMessage = "error"
 
-    assertIO(
-      {
-        val req = BestReviewRequest("01.01.2010", "01.01.2020", 1, -1)
-        PayloadValidator.validateBestReviewRequest(req).value
-      },
-      Left(
-        ValidationError(
-          s"Expected positive numerical value in min_number_reviews. Found -1"
-        )
-      )
-    )
-  }
+    when(mockClient.use(any())(any()))
+      .thenReturn(IO(throw new Exception(errorMessage)))
 
-  test("Returns Unit given all fields are valid") {
-    assertIO(
-      {
-        val req = BestReviewRequest("01.01.2000", "01.01.2010", 1, 1)
-        PayloadValidator.validateBestReviewRequest(req).value
-      },
-      Right(())
+    persistenceConnector.findBestReviews(bestReviewRequest) mustBe Left(
+      PersistenceError(errorMessage)
     )
   }

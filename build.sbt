@@ -24,7 +24,8 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
       "org.scalactic" %% "scalactic"           % "3.2.15",
       "org.scalatest" %% "scalatest"           % "3.2.15"               % Test,
-      "ch.qos.logback" % "logback-classic"     % LogbackVersion
+      "org.scalatestplus" %% "mockito-4-6"     % "3.2.15.0" % Test,
+      "ch.qos.logback"     % "logback-classic" % LogbackVersion
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )

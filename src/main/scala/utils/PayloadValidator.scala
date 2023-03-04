@@ -5,7 +5,6 @@ import cats.effect.IO
 import models.errors.ValidationError
 import models.requests.BestReviewRequest
 import org.http4s.Request
-import utils.PayloadValidator.{dateFormat, validateDate}
 
 import java.util.Date
 import scala.util.Try

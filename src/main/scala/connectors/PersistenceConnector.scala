@@ -1,7 +1,7 @@
 package connectors
 
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.unsafe.IORuntime
 import io.circe.generic.auto.*
 import models.errors.PersistenceError
@@ -26,15 +26,13 @@ import org.http4s.{
 }
 import org.http4s.client.middleware.Logger
 
-object PersistenceConnector:
+class PersistenceConnector(client: Resource[IO, Client[IO]]):
 
   implicit val encoder: EntityEncoder[IO, BestReviewRequest] =
     jsonEncoderOf[IO, BestReviewRequest]
 
   implicit val decoder: EntityDecoder[IO, Seq[ReviewRating]] =
     jsonOf[IO, Seq[ReviewRating]]
-
-  private val client = EmberClientBuilder.default[IO].build
 
   private def postRequest(body: BestReviewRequest) = Request[IO](
     method = Method.POST,
@@ -43,7 +41,9 @@ object PersistenceConnector:
 
   def findBestReviews(
       body: BestReviewRequest
-  )(implicit runtime: IORuntime): Either[PersistenceError, Seq[ReviewRating]] =
+  )(implicit
+      runtime: IORuntime
+  ): Either[PersistenceError, Seq[ReviewRating]] =
     client
       .use(client =>
         Logger(logBody = true, logHeaders = true)(client)
