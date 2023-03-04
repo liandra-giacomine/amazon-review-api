@@ -34,17 +34,17 @@ object PersistenceConnector:
   implicit val decoder: EntityDecoder[IO, Seq[ReviewRating]] =
     jsonOf[IO, Seq[ReviewRating]]
 
+  private val client = EmberClientBuilder.default[IO].build
+
   private def postRequest(body: BestReviewRequest) = Request[IO](
     method = Method.POST,
-    uri = uri"http://localhost:8081/amazon/best-review"
+    uri = uri"http://localhost:8081/reviews/best"
   ).withEntity[BestReviewRequest](body)
 
   def findBestReviews(
       body: BestReviewRequest
   )(implicit runtime: IORuntime): Either[PersistenceError, Seq[ReviewRating]] =
-    EmberClientBuilder
-      .default[IO]
-      .build
+    client
       .use(client =>
         Logger(logBody = true, logHeaders = true)(client)
           .run(postRequest(body))

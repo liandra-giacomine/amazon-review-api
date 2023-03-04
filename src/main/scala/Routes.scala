@@ -34,8 +34,6 @@ import scala.concurrent.ExecutionContext
 
 object Routes:
 
-// TODO: Throw a bad request if toTimeStamp is more than fromTimeStamp?
-//TODO: Handle errors coming from the service, maybe return EitherT[IO, Throwable, List[ReviewRating]]
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
 
