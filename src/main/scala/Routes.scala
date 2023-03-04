@@ -64,7 +64,9 @@ object Routes:
               case Left(validationError) => BadRequest(validationError.message)
               case Right(_) =>
                 PersistenceConnector.findBestReviews(bestReviewReq) match {
-                  case Left(e)  => BadRequest(e.message)
+                  case Left(e) =>
+                    // TODO: Log message
+                    InternalServerError()
                   case Right(r) => Ok(r.asJson)
                 }
             }
