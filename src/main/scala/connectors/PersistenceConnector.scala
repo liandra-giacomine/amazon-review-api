@@ -24,6 +24,8 @@ import org.http4s.{
   Uri,
   UrlForm
 }
+import org.http4s.client.middleware.Logger
+
 object PersistenceConnector:
 
   implicit val encoder: EntityEncoder[IO, BestReviewRequest] =
@@ -43,7 +45,11 @@ object PersistenceConnector:
     EmberClientBuilder
       .default[IO]
       .build
-      .use(client => client.expect[Seq[ReviewRating]](postRequest(body)))
+      .use(client =>
+        Logger(logBody = true, logHeaders = true)(client)
+          .run(postRequest(body))
+          .use(resp => resp.as[Seq[ReviewRating]])
+      )
       .attempt
       .map {
         case Left(e)        => Left(PersistenceError(e.getMessage))

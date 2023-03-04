@@ -35,6 +35,6 @@ object BestReviewRequest:
         ("start", Json.fromString(b.startDate)),
         ("end", Json.fromString(b.endDate)),
         ("limit", Json.fromInt(b.limit)),
-        ("minReviews", Json.fromInt(b.minReviews))
+        ("min", Json.fromInt(b.minReviews))
       )
     }
