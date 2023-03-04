@@ -1,7 +1,10 @@
 package connectors
 
+import cats.data.EitherT
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import io.circe.generic.auto.*
+import models.errors.PersistenceError
 import models.requests.BestReviewRequest
 import models.responses.ReviewRating
 import org.http4s.Uri.Path
@@ -34,10 +37,16 @@ object PersistenceConnector:
     uri = uri"http://localhost:8081/amazon/best-review"
   ).withEntity[BestReviewRequest](body)
 
-  def findBestReviews(body: BestReviewRequest): IO[Seq[ReviewRating]] =
+  def findBestReviews(
+      body: BestReviewRequest
+  )(implicit runtime: IORuntime): Either[PersistenceError, Seq[ReviewRating]] =
     EmberClientBuilder
       .default[IO]
       .build
-      .use(client => client.expect[Seq[ReviewRating]](postRequest(body))
-//          .flatMap(x => IO(x))
-      )
+      .use(client => client.expect[Seq[ReviewRating]](postRequest(body)))
+      .attempt
+      .map {
+        case Left(e)        => Left(PersistenceError(e.getMessage))
+        case Right(reviews) => Right(reviews)
+      }
+      .unsafeRunSync()

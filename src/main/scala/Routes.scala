@@ -39,6 +39,13 @@ object Routes:
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
 
+//  def deriveStatus(bestReviewReq: BestReviewRequest): org.http4s.Status = {
+//    PersistenceConnector
+//      .findBestReviews(
+//        bestReviewReq
+//      )
+//  }
+
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "amazon" / "best-review" =>
       import org.http4s.dsl.io.*
@@ -56,10 +63,10 @@ object Routes:
               .unsafeRunSync() match {
               case Left(validationError) => BadRequest(validationError.message)
               case Right(_) =>
-                PersistenceConnector
-                  .findBestReviews(bestReviewReq)
-                  .map(r => Ok(r.asJson))
-                  .unsafeRunSync()
+                PersistenceConnector.findBestReviews(bestReviewReq) match {
+                  case Left(e)  => BadRequest(e.message)
+                  case Right(r) => Ok(r.asJson)
+                }
             }
         }
         .unsafeRunSync()
