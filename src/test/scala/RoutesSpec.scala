@@ -34,22 +34,8 @@ class RoutesSpec extends CatsEffectSuite:
   val bestReviewRequest = BestReviewRequest("01.01.2000", "01.01.2010", 1, 1)
   val reviews           = Seq(ReviewRating("B000JQ0JNS", 4.5))
 
-  // startDate: String,
-  //    endDate: String,
-  //    limit: Int,
-  //    minReviews: Int
-  val json = Json
-    .arr(
-      Json.fromFields(
-        List(
-          ("start", Json.fromString("01.01.2010")),
-          ("end", Json.fromString("01.01.2020")),
-          ("limit", Json.fromInt(1)),
-          ("min_number_reviews", Json.fromInt(1))
-        )
-      )
-    )
-    .toString
+  val json =
+    """{"start": "01.01.2010", "end": "01.01.2020", "limit": 1, "min_number_reviews": 1}"""
 
   private[this] val getBestReview: IO[Response[IO]] =
     routes.reviewRoutes.orNotFound
@@ -76,8 +62,8 @@ class RoutesSpec extends CatsEffectSuite:
       .thenReturn(Right(reviews))
 
     assertIO(
-      getBestReview.flatMap(r => r.as[Seq[ReviewRating]]),
-      Seq.empty[ReviewRating]
+      getBestReview.flatMap(r => r.as[String]),
+      "[{\"asin\":\"B000JQ0JNS\",\"average_rating\":4.5}]"
     )
   }
 
