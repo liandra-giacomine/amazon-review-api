@@ -8,6 +8,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val root = (project in file("."))
   .settings(inThisBuild(buildSettings))
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings)
   .settings(
     organization := "com.example",
     name         := "quickstart",
