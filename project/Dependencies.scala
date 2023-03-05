@@ -7,14 +7,15 @@ object Dependencies {
   val CirceVersion           = "0.14.3"
 
   val compile = Seq(
-    "org.http4s"    %% "http4s-ember-server" % Http4sVersion,
-    "org.http4s"    %% "http4s-ember-client" % Http4sVersion,
-    "org.http4s"    %% "http4s-circe"        % Http4sVersion,
-    "org.http4s"    %% "http4s-dsl"          % Http4sVersion,
-    "io.circe"      %% "circe-generic"       % CirceVersion,
-    "io.circe"      %% "circe-parser"        % CirceVersion,
-    "org.scalactic" %% "scalactic"           % "3.2.15",
-    "ch.qos.logback" % "logback-classic"     % LogbackVersion
+    "org.http4s"      %% "http4s-ember-server" % Http4sVersion,
+    "org.http4s"      %% "http4s-ember-client" % Http4sVersion,
+    "org.http4s"      %% "http4s-circe"        % Http4sVersion,
+    "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
+    "io.circe"        %% "circe-generic"       % CirceVersion,
+    "io.circe"        %% "circe-parser"        % CirceVersion,
+    "org.scalactic"   %% "scalactic"           % "3.2.15",
+    "ch.qos.logback"   % "logback-classic"     % LogbackVersion,
+    "com.google.guava" % "guava"               % "28.1-jre"
   )
 
   val test = Seq(
