@@ -34,7 +34,7 @@ class RoutesSpec extends CatsEffectSuite:
   val bestReviewRequest = BestReviewRequest("01.01.2000", "01.01.2010", 1, 1)
   val reviews           = Seq(ReviewRating("B000JQ0JNS", 4.5))
 
-  val json = Json
+  val validPayload = Json
     .fromFields(
       List(
         ("start", Json.fromString("01.01.2010")),
@@ -45,14 +45,18 @@ class RoutesSpec extends CatsEffectSuite:
     )
     .toString
 
-  private[this] val getBestReview: IO[Response[IO]] =
+  private def getBestReview(
+      payload: String = validPayload
+  ): IO[Response[IO]] =
     routes.reviewRoutes.orNotFound
       .run(
         Request(
           method = Method.POST,
           uri = uri"/amazon/best-review"
-        ).withEntity(json)
+        ).withEntity(payload)
       )
+
+  val validPayloadReq = getBestReview()
 
   test(
     "POST /amazon/best-review returns status code Ok given a successful response from the persistence service"
@@ -60,7 +64,7 @@ class RoutesSpec extends CatsEffectSuite:
     when(mockPersistenceConnector.findBestReviews(any()))
       .thenReturn(IO(Right(reviews)))
 
-    assertIO(getBestReview.map(_.status), Status.Ok)
+    assertIO(validPayloadReq.map(_.status), Status.Ok)
   }
 
   test(
@@ -71,8 +75,57 @@ class RoutesSpec extends CatsEffectSuite:
       .thenReturn(IO(Right(reviews)))
 
     assertIO(
-      getBestReview.flatMap(r => r.as[Seq[ReviewRating]]),
+      validPayloadReq.flatMap(r => r.as[Seq[ReviewRating]]),
       Seq(ReviewRating("B000JQ0JNS", 4.5))
+    )
+  }
+
+  test(
+    "POST /amazon/best-review returns bad request when it receives a payload it cannot parse"
+  ) {
+    when(mockPersistenceConnector.findBestReviews(any()))
+      .thenReturn(IO(Left(PersistenceError("error"))))
+
+    val invalidJsonReq = getBestReview("Invalid json")
+
+    assertIO(invalidJsonReq.map(_.status), Status.BadRequest)
+
+    assertIO(
+      invalidJsonReq.flatMap(_.as[String]),
+      "Malformed message body: Invalid JSON"
+    )
+  }
+
+  test(
+    "POST /amazon/best-review returns bad request when the payload fails validation"
+  ) {
+
+    val invalidDate = "123.01.2020"
+
+    val payloadWithInvalidDate = Json
+      .fromFields(
+        List(
+          ("start", Json.fromString(invalidDate)),
+          ("end", Json.fromString("01.01.2020")),
+          ("limit", Json.fromInt(1)),
+          ("min_number_reviews", Json.fromInt(1))
+        )
+      )
+      .toString
+
+    val invalidPayloadReq = getBestReview(payloadWithInvalidDate)
+
+    when(mockPersistenceConnector.findBestReviews(any()))
+      .thenReturn(IO(Left(PersistenceError("error"))))
+
+    assertIO(
+      invalidPayloadReq.map(_.status),
+      Status.BadRequest
+    )
+
+    assertIO(
+      invalidPayloadReq.flatMap(_.as[String]),
+      s"Invalid date: $invalidDate"
     )
   }
 
@@ -82,5 +135,5 @@ class RoutesSpec extends CatsEffectSuite:
     when(mockPersistenceConnector.findBestReviews(any()))
       .thenReturn(IO(Left(PersistenceError("error"))))
 
-    assertIO(getBestReview.map(_.status), Status.InternalServerError)
+    assertIO(validPayloadReq.map(_.status), Status.InternalServerError)
   }
