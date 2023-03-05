@@ -1,4 +1,4 @@
-package amazonreviewapi
+package connectors
 
 import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}

@@ -1,4 +1,4 @@
-package amazonreviewapi
+package utils
 
 import models.errors.ValidationError
 import models.requests.BestReviewRequest
