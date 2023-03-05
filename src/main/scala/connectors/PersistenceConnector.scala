@@ -41,9 +41,7 @@ class PersistenceConnector(client: Resource[IO, Client[IO]]):
 
   def findBestReviews(
       body: BestReviewRequest
-  )(implicit
-      runtime: IORuntime
-  ): Either[PersistenceError, Seq[ReviewRating]] =
+  ): IO[Either[PersistenceError, Seq[ReviewRating]]] =
     client
       .use(client =>
         Logger(logBody = true, logHeaders = true)(client)
@@ -55,4 +53,3 @@ class PersistenceConnector(client: Resource[IO, Client[IO]]):
         case Left(e)        => Left(PersistenceError(e.getMessage))
         case Right(reviews) => Right(reviews)
       }
-      .unsafeRunSync()

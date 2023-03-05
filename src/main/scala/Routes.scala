@@ -57,7 +57,9 @@ class Routes(persistenceConnector: PersistenceConnector):
               .unsafeRunSync() match {
               case Left(validationError) => BadRequest(validationError.message)
               case Right(_) =>
-                persistenceConnector.findBestReviews(bestReviewReq) match {
+                persistenceConnector
+                  .findBestReviews(bestReviewReq)
+                  .unsafeRunSync() match {
                   case Left(_)  => InternalServerError()
                   case Right(r) => Ok(r.asJson)
                 }

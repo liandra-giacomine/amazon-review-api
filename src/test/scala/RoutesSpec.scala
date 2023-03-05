@@ -57,8 +57,8 @@ class RoutesSpec extends CatsEffectSuite:
   test(
     "POST /amazon/best-review returns status code Ok given a successful response from the persistence service"
   ) {
-    when(mockPersistenceConnector.findBestReviews(any())(any()))
-      .thenReturn(Right(reviews))
+    when(mockPersistenceConnector.findBestReviews(any()))
+      .thenReturn(IO(Right(reviews)))
 
     assertIO(getBestReview.map(_.status), Status.Ok)
   }
@@ -67,8 +67,8 @@ class RoutesSpec extends CatsEffectSuite:
     "POST /amazon/best-review returns array of asin and average_rating objects"
   ) {
 
-    when(mockPersistenceConnector.findBestReviews(any())(any()))
-      .thenReturn(Right(reviews))
+    when(mockPersistenceConnector.findBestReviews(any()))
+      .thenReturn(IO(Right(reviews)))
 
     assertIO(
       getBestReview.flatMap(r => r.as[Seq[ReviewRating]]),
@@ -79,8 +79,8 @@ class RoutesSpec extends CatsEffectSuite:
   test(
     "POST /amazon/best-review returns internal server error given a failure response from the persistence service"
   ) {
-    when(mockPersistenceConnector.findBestReviews(any())(any()))
-      .thenReturn(Left(PersistenceError("error")))
+    when(mockPersistenceConnector.findBestReviews(any()))
+      .thenReturn(IO(Left(PersistenceError("error"))))
 
     assertIO(getBestReview.map(_.status), Status.InternalServerError)
   }

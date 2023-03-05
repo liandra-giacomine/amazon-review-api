@@ -29,8 +29,11 @@ class PersistenceConnectorSpec extends CatsEffectSuite:
 
     when(mockClient.use(any())(any())).thenReturn(IO(clientResponse))
 
-    persistenceConnector.findBestReviews(bestReviewRequest) mustBe Right(
-      clientResponse
+    assertIO(
+      persistenceConnector.findBestReviews(bestReviewRequest),
+      Right(
+        clientResponse
+      )
     )
   }
 
@@ -42,7 +45,10 @@ class PersistenceConnectorSpec extends CatsEffectSuite:
     when(mockClient.use(any())(any()))
       .thenReturn(IO(throw new Exception(errorMessage)))
 
-    persistenceConnector.findBestReviews(bestReviewRequest) mustBe Left(
-      PersistenceError(errorMessage)
+    assertIO(
+      persistenceConnector.findBestReviews(bestReviewRequest),
+      Left(
+        PersistenceError(errorMessage)
+      )
     )
   }
