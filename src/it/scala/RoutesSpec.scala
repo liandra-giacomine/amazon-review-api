@@ -13,11 +13,12 @@ import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.mockito.ArgumentMatchers.any
+import utils.RequestCache
 
 class RoutesSpec extends CatsEffectSuite:
 
-  val mockPersistenceConnector = mock[PersistenceConnector]
-  val routes                   = Routes(mockPersistenceConnector)
+  val mockRequestCache = mock[RequestCache]
+  val routes           = Routes(mockRequestCache)
 
   implicit val encoder: EntityEncoder[IO, BestReviewRequest] =
     jsonEncoderOf[IO, BestReviewRequest]
@@ -61,7 +62,7 @@ class RoutesSpec extends CatsEffectSuite:
   test(
     "POST /amazon/best-review returns status code Ok given a successful response from the persistence service"
   ) {
-    when(mockPersistenceConnector.findBestReviews(any()))
+    when(mockRequestCache.get(any()))
       .thenReturn(IO(Right(reviews)))
 
     assertIO(validPayloadReq.map(_.status), Status.Ok)
@@ -71,7 +72,7 @@ class RoutesSpec extends CatsEffectSuite:
     "POST /amazon/best-review returns array of asin and average_rating objects"
   ) {
 
-    when(mockPersistenceConnector.findBestReviews(any()))
+    when(mockRequestCache.get(any()))
       .thenReturn(IO(Right(reviews)))
 
     assertIO(
@@ -83,7 +84,7 @@ class RoutesSpec extends CatsEffectSuite:
   test(
     "POST /amazon/best-review returns bad request when it receives a payload it cannot parse"
   ) {
-    when(mockPersistenceConnector.findBestReviews(any()))
+    when(mockRequestCache.get(any()))
       .thenReturn(IO(Left(PersistenceError("error"))))
 
     val invalidJsonReq = getBestReview("Invalid json")
@@ -115,7 +116,7 @@ class RoutesSpec extends CatsEffectSuite:
 
     val invalidPayloadReq = getBestReview(payloadWithInvalidDate)
 
-    when(mockPersistenceConnector.findBestReviews(any()))
+    when(mockRequestCache.get(any()))
       .thenReturn(IO(Left(PersistenceError("error"))))
 
     assertIO(
@@ -132,7 +133,7 @@ class RoutesSpec extends CatsEffectSuite:
   test(
     "POST /amazon/best-review returns internal server error given a failure response from the persistence service"
   ) {
-    when(mockPersistenceConnector.findBestReviews(any()))
+    when(mockRequestCache.get(any()))
       .thenReturn(IO(Left(PersistenceError("error"))))
 
     assertIO(validPayloadReq.map(_.status), Status.InternalServerError)

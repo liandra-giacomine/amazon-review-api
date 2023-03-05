@@ -35,17 +35,13 @@ import java.nio.file.Paths
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.ExecutionContext
 
-class Routes(persistenceConnector: PersistenceConnector):
-
-  implicit val runtime: IORuntime = cats.effect.unsafe.IORuntime.global
+class Routes(requestCache: RequestCache)(implicit runtime: IORuntime):
 
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
 
   implicit val encoder: EntityDecoder[IO, Seq[ReviewRating]] =
     jsonOf[IO, Seq[ReviewRating]]
-
-  private val requestCache = new RequestCache(persistenceConnector)
 
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "amazon" / "best-review" =>
@@ -63,7 +59,7 @@ class Routes(persistenceConnector: PersistenceConnector):
               .unsafeRunSync() match {
               case Left(validationError) => BadRequest(validationError.message)
               case Right(_) =>
-                requestCache.getCache.get(bestReviewReq) match {
+                requestCache.get(bestReviewReq).unsafeRunSync() match {
                   case Left(_)  => InternalServerError()
                   case Right(r) => Ok(r.asJson)
                 }

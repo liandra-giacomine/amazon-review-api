@@ -1,5 +1,6 @@
 package amazonreviewapi
 
+import cats.effect.unsafe.IORuntime
 import cats.effect.{Async, ExitCode, IO}
 import cats.syntax.all.*
 import com.comcast.ip4s.*
@@ -8,13 +9,17 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits.*
 import org.http4s.server.middleware.Logger
+import utils.RequestCache
 
 object Server:
 
   val persistenceConnector: PersistenceConnector =
     PersistenceConnector(EmberClientBuilder.default[IO].build)
 
-  val routes: Routes = Routes(persistenceConnector)
+  implicit val runtime: IORuntime = cats.effect.unsafe.IORuntime.global
+
+  val requestCache   = new RequestCache(persistenceConnector)
+  val routes: Routes = Routes(requestCache)
 
   val run: IO[Unit] = {
 

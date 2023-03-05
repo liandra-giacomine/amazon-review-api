@@ -1,5 +1,6 @@
 package utils
 
+import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.google.common.collect.Multiset.Entry
@@ -14,7 +15,7 @@ class RequestCache(persistenceConnector: PersistenceConnector)(implicit
     runtime: IORuntime
 ) {
 
-  private val reviewCacheLoader =
+  private val loader =
     new CacheLoader[BestReviewRequest, Either[PersistenceError, Seq[
       ReviewRating
     ]]] {
@@ -23,13 +24,15 @@ class RequestCache(persistenceConnector: PersistenceConnector)(implicit
       ]] = persistenceConnector.findBestReviews(key).unsafeRunSync()
     }
 
-  val getCache = CacheBuilder
+  private val cache = CacheBuilder
     .newBuilder()
     .maximumSize(10000L)
     .expireAfterAccess(10L, TimeUnit.MINUTES)
     .build[BestReviewRequest, Either[PersistenceError, Seq[ReviewRating]]](
-      reviewCacheLoader
+      loader
     )
+
+  def get(key: BestReviewRequest) = IO(cache.get(key))
 
 }
 
