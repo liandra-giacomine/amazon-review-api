@@ -13,20 +13,7 @@ lazy val root = (project in file("."))
     name         := "quickstart",
     version      := "0.0.1-SNAPSHOT",
     scalaVersion := "3.1.0",
-    libraryDependencies ++= Seq(
-      "org.http4s"    %% "http4s-ember-server" % Http4sVersion,
-      "org.http4s"    %% "http4s-ember-client" % Http4sVersion,
-      "org.http4s"    %% "http4s-circe"        % Http4sVersion,
-      "org.http4s"    %% "http4s-dsl"          % Http4sVersion,
-      "io.circe"      %% "circe-generic"       % CirceVersion,
-      "io.circe"      %% "circe-parser"        % CirceVersion,
-      "org.scalameta" %% "munit"               % MunitVersion           % Test,
-      "org.typelevel" %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
-      "org.scalactic" %% "scalactic"           % "3.2.15",
-      "org.scalatest" %% "scalatest"           % "3.2.15"               % Test,
-      "org.scalatestplus" %% "mockito-4-6"     % "3.2.15.0" % Test,
-      "ch.qos.logback"     % "logback-classic" % LogbackVersion
-    ),
+    libraryDependencies ++= Dependencies.compile ++ Dependencies.test,
     testFrameworks += new TestFramework("munit.Framework")
   )
 
