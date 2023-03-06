@@ -35,12 +35,3 @@ class RequestCache(persistenceConnector: PersistenceConnector)(implicit
   def get(key: BestReviewRequest) = IO(cache.get(key))
 
 }
-
-//class BestReviewCacheLoader(persistenceConnector: PersistenceConnector)
-//    extends CacheLoader[BestReviewRequest, Either[PersistenceError, Seq[
-//      ReviewRating
-//    ]]] {
-//  override def load(key: BestReviewRequest): Either[PersistenceError, Seq[
-//    ReviewRating
-//  ]] = persistenceConnector.findBestReviews(key).unsafeRunSync()
-//}
