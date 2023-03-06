@@ -26,6 +26,8 @@ This service runs on port 8081. You can compile and run it with the following co
 - http4s: Automatically streams requests using fs2
 - fs2: Functional streaming
 - Guava: Performance improvement for computationally intensive queries
+- Circe: JSON library
+- Logback: Logging requests
 
 ### Requests
 
